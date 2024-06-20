@@ -1,0 +1,142 @@
+version: "3"
+services:
+  kafka:
+    image: bitnami/kafka:3.3.2
+    container_name: franz
+    ports:
+      - 9092:9092
+    networks:
+      - kafka-net
+    environment:
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://franz:9092
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@franz:9093
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_KRAFT_CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
+      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+    
+  akhq:
+    image: tchiotludo/akhq:latest
+    container_name: akhq
+    ports:
+      - 8080:8080
+    networks:
+      - kafka-net
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            kafka:
+              properties:
+                bootstrap.servers: "franz:9092"
+
+  kafka-connect:
+    
+    image: confluentinc/cp-kafka-connect-base:latest
+    container_name: kafka-connect
+    ports:
+      - 8083:8083
+    networks:
+      - kafka-net
+    environment:
+      - CONNECT_BOOTSTRAP_SERVERS=franz:9092
+      - CONNECT_REST_PORT=8083
+      - CONNECT_GROUP_ID=kafka-connect
+      - CONNECT_CONFIG_STORAGE_TOPIC=connect-config
+      - CONNECT_OFFSET_STORAGE_TOPIC=connect-offsets
+      - CONNECT_STATUS_STORAGE_TOPIC=connect-status
+      - CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
+      - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      - CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect
+      # - CONNECT_LOG4J_LOGGERS=org.apache.kafka.connect.runtime.rest=WARN,org.apache.kafka.connect.runtime.Worker=WARN,org.apache.kafka.connect.runtime.distributed=WARN,org.apache.kafka.connect.storage.KafkaOffsetBackingStore=WARN,io.debezium=DEBUG
+      - CONNECT_PLUGIN_PATH=/usr/share/java,/usr/share/confluent-hub-components
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing Connectors from Confluent Hub"
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:2.4.2
+        confluent-hub install --no-prompt debezium/debezium-connector-sqlserver:latest
+        #
+        echo "Downloading and extracting Debezium JDBC Connector to directory:"
+        cd /usr/share/confluent-hub-components
+        pwd
+        curl -o debezium-connector-jdbc-2.5.4.Final-plugin.tar.gz https://repo1.maven.org/maven2/io/debezium/debezium-connector-jdbc/2.5.4.Final/debezium-connector-jdbc-2.5.4.Final-plugin.tar.gz
+        tar -xvf debezium-connector-jdbc-2.5.4.Final-plugin.tar.gz
+        echo "Debezium JDBC Sink Connector extracted"
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run &
+        #
+        sleep infinity
+    depends_on:
+      - kafka
+
+  mysql:
+    image: mysql:8.2 # Version needed for debezium version of connector
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: sampledb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpassword
+    ports:
+      - 3306:3306
+    networks:
+      - kafka-net
+    volumes:
+      - ./mysql-init:/docker-entrypoint-initdb.d
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - 8081:80
+    networks:
+      - kafka-net
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: sampledb
+    ports:
+      - 5432:5432
+    networks:
+      - kafka-net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - 8082:80
+    networks:
+      - kafka-net
+    depends_on:
+      - postgres
+
+volumes:
+  kafka_data:
+    driver: local
+
+networks:
+  kafka-net:
