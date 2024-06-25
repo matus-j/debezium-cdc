@@ -68,6 +68,7 @@ services:
         echo "Installing Connectors from Confluent Hub"
         confluent-hub install --no-prompt debezium/debezium-connector-mysql:2.4.2
         confluent-hub install --no-prompt debezium/debezium-connector-sqlserver:latest
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:latest
         #
         echo "Downloading and extracting Debezium JDBC Connector to directory:"
         cd /usr/share/confluent-hub-components

@@ -1,8 +1,7 @@
 #!/bin/bash
 echo "JSON Dateien der Registrierungen müssen im kafka-connect Ordner liegen!"
-# Standardwerte für Connectoren
-DEFAULT_CONNECTORS=("mysql-connector.json" "postgres-sink-connector.json")
-DEFAULT_STATUS_CONNECTOR="mysql-postgres-sink-connector"
+
+DEFAULT_CONNECTORS=("mysql-connector.json" "debezium-sink-connector.json" "confluent-jdbc-sink-connector.json")
 
 CONNECTOR_FILES=("${@:-${DEFAULT_CONNECTORS[@]}}")
 STATUS_CONNECTOR=${3:-$DEFAULT_STATUS_CONNECTOR}

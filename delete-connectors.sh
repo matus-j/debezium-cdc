@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEFAULT_CONNECTORS=("mysql-source-debezium" "mysql-postgres-sink-connector")
+DEFAULT_CONNECTORS=("mysql-source-debezium" "debezium-sink-connector")
 
 CONNECTORS=("$@")
 if [ ${#CONNECTORS[@]} -eq 0 ]; then
