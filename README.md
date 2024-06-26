@@ -1,6 +1,6 @@
-## Single DB Table Sync from MySQL to PostgreSQL (JSON)
+## Single DB Table Sync from SQLServer to PostgreSQL
 
-### Setup:
+### Setup
 ```bash
 docker-compose up -d
 ```
@@ -28,20 +28,13 @@ Error:
 
 ### TODO:
 - **Database History/Snapshot**: Transfer history and handle large data volumes
-- **Data Types Mapping**: Ensure accurate mapping of data types
-- **Source Change**: Use SQL Server as a source instead of MySQL
+- **Data Types Mapping**: Ensure accurate mapping of data types, (probably) resolved by:
 - Use [Avro](https://debezium.io/documentation/reference/stable/configuration/avro.html) instead of JSON
 
 
 ## Database Management
 
-##### phpMyAdmin
-- **URL**: [phpMyAdmin](http://localhost:8081)
-- **Host**: user
-- **Root Password**: userpassword
-
-##### pgAdmin
-- **URL**: [pgAdmin](http://localhost:8082)
+##### [pgAdmin](http://localhost:8082)
 - **Email**: admin@admin.com
 - **Password**: admin
 - **Host**: postgres
@@ -49,8 +42,58 @@ Error:
 - **DB-Username**: user
 - **DB-Password**: password
 
+## SQL Server Connection
 
+```bash
+docker exec -it sql-server "bash"
+```
 
+```bash
+/opt/mssql-tools/bin/sqlcmd -S localhost -U cdc_user -P "cdc_Password?&"
+```
+*or*
+```bash
+/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "iLoveBillGate$"
+```
+Check if sampledb is available:
+```sql
+SELECT Name from sys.databases;
+GO
+```
+
+```sql
+USE sampledb;
+select * from users;
+GO
+```
+```sql
+INSERT INTO Users (ID, Name, Email) VALUES (42, 'Jake Peralta', 'mangycarl@nypd.com');
+```
+```sql
+DELETE FROM Users WHERE ID = 4;
+```
+```sql
+UPDATE Users SET Name = 'Harry Kane', Email = 'harry.kane@fc.bayern' WHERE ID = 1;
+```
+--> Changes are reflected in PostgreSQL
+
+### SQL Server Agent Status
+Check SQL Server Agent Status:
+```sql
+1> use sampledb;
+2> GO
+Changed database context to 'sampledb'.
+1> select case when dss.[status] = 4 then 1 else 0 end as isRunning
+2> from sys.dm_server_services dss
+3> where dss.[servicename] like N'SQL Server Agent (%';
+4> GO
+isRunning  
+-----------
+          1
+
+(1 rows affected)
+```
+SQL Server Agent has to be running for CDC to work!
 
 ## Kafka Connect
 Get all available Plugins
@@ -60,4 +103,3 @@ Get all available Plugins
 Register Connector
 ```
 curl -X POST -H "Content-Type: application/json" --data @kafka-connect/mysql-connector.json http://localhost:8083/connectors
-```

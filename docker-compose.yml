@@ -84,31 +84,29 @@ services:
     depends_on:
       - kafka
 
-  mysql:
-    image: mysql:8.2 # Version needed for debezium version of connector
-    container_name: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: sampledb
-      MYSQL_USER: user
-      MYSQL_PASSWORD: userpassword
-    ports:
-      - 3306:3306
-    networks:
-      - kafka-net
-    volumes:
-      - ./mysql-init:/docker-entrypoint-initdb.d
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server
     environment:
-      PMA_HOST: mysql
-      MYSQL_ROOT_PASSWORD: rootpassword
+      SA_PASSWORD: "iLoveBillGate$"
+      ACCEPT_EULA: "Y"
+      MSSQL_AGENT_ENABLED: true
     ports:
-      - 8081:80
+      - 1433:1433
+    volumes:
+      - ./sql-server/init.sql:/init.sql
+    command: /bin/bash -c "(/opt/mssql/bin/sqlservr & sleep 30s & /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'iLoveBillGate$' -d master -i /init.sql & wait)"
     networks:
       - kafka-net
+  adminer:
+    image: adminer
+    container_name: adminer
+    ports:
+      - 8081:8080
+    networks:
+      - kafka-net  
+
 
   postgres:
     image: postgres:13

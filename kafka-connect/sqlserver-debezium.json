@@ -1,0 +1,21 @@
+{
+    "name": "sqlserver-source-debezium",
+    "config": {
+      "connector.class": "io.debezium.connector.sqlserver.SqlServerConnector",
+      "tasks.max": "1",
+      "database.hostname": "sqlserver",
+      "database.port": "1433",
+      "database.user": "cdc_user",
+      "database.password": "cdc_Password?&",
+      "database.names": "sampledb",
+      "database.server.name": "sqlserver1",
+      "database.history.kafka.bootstrap.servers": "franz:9092",
+      "database.history.kafka.topic": "schema-changes.sqlserver-source",
+      "schema.history.internal.kafka.bootstrap.servers": "franz:9092",
+      "schema.history.internal.kafka.topic": "schema-history.sqlserver-source",
+      "topic.prefix": "sqlserver-source-debezium",
+      "database.encrypt": "false",
+      "database.trustServerCertificate": "true"
+    }
+  }
+  

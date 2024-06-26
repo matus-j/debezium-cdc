@@ -3,7 +3,7 @@
     "config": {
       "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
       "tasks.max": "1",
-      "topics": "mysql-source-debezium.sampledb.users",
+      "topics": "sqlserver-source-debezium.sampledb.dbo.Users",
       "connection.url": "jdbc:postgresql://postgres:5432/sampledb",
       "connection.user": "user",
       "connection.password": "password",
@@ -12,7 +12,7 @@
       "auto.evolve": "true",
       "delete.enabled": "true",
       "pk.mode": "record_key",
-      "pk.fields": "id",
+      "pk.fields": "ID",
       "table.name.format": "users",
       "transforms": "unwrap,flatten",
       "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
