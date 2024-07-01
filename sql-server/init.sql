@@ -24,6 +24,17 @@ INSERT INTO Users (ID, Name, Email, Birthday) VALUES (9, 'Bruce Wayne', 'bruce.w
 INSERT INTO Users (ID, Name, Email, Birthday) VALUES (10, 'Clark Kent', 'clark.kent@dailyplanet.com', '1979-06-18');
 GO
 
+CREATE TABLE Orders (
+    ID INT PRIMARY KEY,
+    UserID INT,
+    OrderDate DATE,
+    TotalAmount DECIMAL(10, 2),
+    Product NVARCHAR(255),
+    FOREIGN KEY (UserID) REFERENCES Users(ID)
+);
+
+INSERT INTO Orders (ID, UserID, OrderDate, TotalAmount, Product) VALUES (1, 8, '2024-06-30', 120.50, 'Beer');
+INSERT INTO Orders (ID, UserID, OrderDate, TotalAmount, Product) VALUES (9, 1, '2024-07-01', 200.00, 'Batman-Costume');
 
 EXEC sys.sp_cdc_enable_db;
 GO
@@ -42,7 +53,7 @@ GO
 CREATE USER cdc_user FOR LOGIN cdc_user;
 GO
 
-EXEC sp_addrolemember N'db_owner', N'cdc_user';  -- Assigning db_owner role
+EXEC sp_addrolemember N'db_owner', N'cdc_user';
 EXEC sp_addrolemember N'db_datareader', N'cdc_user';
 EXEC sp_addrolemember N'db_datawriter', N'cdc_user';
 GO

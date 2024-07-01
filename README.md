@@ -1,4 +1,4 @@
-## Single DB Table Sync from SQLServer to PostgreSQL
+## Simple Sync from SQLServer to PostgreSQL
 
 ### Setup
 ```bash
@@ -12,7 +12,7 @@ Register (Source, Debezium JDBC Sink and Non Debezium JDBC Sink) connectors (loc
 ### Keep in Mind:
 - **Topic Name to DB-Name Issue**: Due to Debezium naming conventions, the topic name may lead to errors. Adjustments were required: [Doc](https://docs.confluent.io/kafka-connectors/jdbc/current/sink-connector/sink_config_options.html#data-mapping)
 - **JSON Converter** used
-- **Single DB Table**: Automatic mapping of data types is questionable (?)
+- Automatic mapping of data types is questionable
 
 ### Connector Used:
 [JDBC Sink Connector](https://docs.confluent.io/kafka-connectors/jdbc/current/sink-connector/overview.html#jdbc-sink-connector-for-cp)  
@@ -26,14 +26,9 @@ Error:
 "Caused by: com.fasterxml.jackson.databind.JsonMappingException: Scala module 2.13.5 requires Jackson Databind version >= 2.13.0 and < 2.14.0 - Found jackson-databind version 2.14.2"
 ```
 
-### TODO:
-- **Database History/Snapshot**: Transfer history and handle large data volumes
-- Use [Avro](https://debezium.io/documentation/reference/stable/configuration/avro.html) instead of JSON
-
-
 ## Database Management
 
-##### [pgAdmin](http://localhost:8082)
+### [pgAdmin](http://localhost:8082)
 - **Email**: admin@admin.com
 - **Password**: admin
 - **Host**: postgres
@@ -65,18 +60,20 @@ USE sampledb;
 select * from users;
 GO
 ```
+Change some Data:
 ```sql
 INSERT INTO Users (ID, Name, Email) VALUES (42, 'Jake Peralta', 'mangycarl@nypd.com');
-```
-```sql
 DELETE FROM Users WHERE ID = 4;
-```
-```sql
 UPDATE Users SET Name = 'Harry Kane', Email = 'harry.kane@fc.bayern' WHERE ID = 1;
+GO
 ```
 --> Changes are reflected in PostgreSQL
+```sql
+SELECT * from "Users";
+```
 
-### SQL Server Agent Status
+### SQL Server Agent Status 
+
 Check SQL Server Agent Status:
 ```sql
 1> use sampledb;
@@ -104,10 +101,35 @@ Register Connector
 curl -X POST -H "Content-Type: application/json" --data @kafka-connect/mysql-connector.json http://localhost:8083/connectors
 ```
 
-## Fragen
-- Datumswerte:   
-"Normaler" JDBC Sink connector versteht nicht, dass Date verwendet werden soll --> verwendet int32 (ignoriert "name")
+## Debezium Schema History and Schema Change Topic
+_Source: [Doc SQL Server Connector](https://debezium.io/documentation/reference/stable/connectors/sqlserver.html#sqlserver-schema-history-topic)_
+
+Topics: `schema-history.sqlserver-source` and `sqlserver-source-debezium`
+
+> LSN = Log Sequence Number; LSNs are used to track the sequence of transactions and changes in the database  
+
+==> Connector can thus link older changes with operations. This makes the schema traceable for a specific "area" of the changes up to a specific LSN:
 ```json
+  "position": {
+    "commit_lsn": "00000028:000004e8:0001",
+    "snapshot": true,
+    "snapshot_completed": false
+  },
+```
+==> This is used for connectors after failures or restarts, to know the schema for the data were it continues reading and emitting events
+> ⚠️ The database schema history topic is for internal connector use only.
+> In Debezium, there is no built-in mechanism for sink connectors to automatically use schema change topics to adjust data types in the destination database. (afaik)
+
+That's why `typeName` and `typeExpression` of the history topics are the types of the source database. (despite also containing the jdbc type refrence)
+
+## ...
+
+### Debezium
+- **Schema and Constraints:** Debezium does not transfer constraints or schema definitions automatically. Manual schema creation and maintenance in PostgreSQL are probably and unsurprisingly required
+
+- **Data Type Mapping:** Automatic mapping of data types between SQL Server and PostgreSQL can be inconsistent (e.g. `DATE` as `int32`)
+
+    ```json
           {
             "type": "int32",
             "optional": true,
@@ -115,7 +137,18 @@ curl -X POST -H "Content-Type: application/json" --data @kafka-connect/mysql-con
             "version": 1,
             "field": "Birthday"
           }
-```
-- Text und INT als Datentypen für Sink, außer man verwenden Debezium Sink (Läuft mit verwendetem Image für Connect aber nicht ...)
-- String immer auf TEXT --> Ja im default schon --> Problem?
-- Kann der Name der Tabelle dynamisch mit Regex oder so bestimmt werden?
+    ```
+
+- **Schema change topics** should only be used by source connectors
+
+- **Entity Ordering** can be a problem with Debezium, especially if PostgreSQL database has foreign key constraints. Mentioned [here](https://stackoverflow.com/questions/63457232/debezium-initial-data-snapshot-and-related-entities-order). _Note:_ [Debezium Topic Routing](https://debezium.io/documentation/reference/transformations/topic-routing.html) is not yet part of a stable release.
+
+### Kafka Connect
+- Debezium JDBC Sink Connector may not be compatible with certain Kafka Connect images, requiring workarounds like the JDBC Sink connector
+- JSON converter is used in this setup! Avro makes probably more sense as outlined [here](https://debezium.io/blog/2016/09/19/Serializing-Debezium-events-with-Avro/)
+- **[Regex Router](https://docs.confluent.io/platform/current/connect/transforms/regexrouter.html)** is used for JDBC Sink connector table naming
+
+
+#### Dump 🗑️
+-  >"We need to look at only the initial database loading. In my case, the database was around 250Gb of size (...) In our case, running the load takes from 2 to 4 hours to get 100% online on sink databases, depending on the usage of the systems."
+[Medium](https://william-prigol-lopes.medium.com/how-i-solved-real-time-sync-between-sql-server-and-postgresql-with-apache-kafka-3ce6b0b75c)
