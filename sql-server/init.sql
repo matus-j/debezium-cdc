@@ -1,29 +1,29 @@
 CREATE DATABASE sampledb;
 GO
 
--- Use database
 USE sampledb;
 GO
 
 CREATE TABLE Users (
     ID INT PRIMARY KEY,
     Name NVARCHAR(50),
-    Email NVARCHAR(50)
+    Email NVARCHAR(50),
+    Birthday DATE
 );
 GO
 
--- Insert example data
-INSERT INTO Users (ID, Name, Email) VALUES (1, 'Harry Potter', 'harry.potter@hogwarts.com');
-INSERT INTO Users (ID, Name, Email) VALUES (2, 'Hermione Granger', 'hermione.granger@hogwarts.com');
-INSERT INTO Users (ID, Name, Email) VALUES (3, 'Ron Weasley', 'ron.weasley@hogwarts.com');
-INSERT INTO Users (ID, Name, Email) VALUES (4, 'Luke Skywalker', 'luke.skywalker@rebellion.com');
-INSERT INTO Users (ID, Name, Email) VALUES (5, 'Darth Vader', 'darth.vader@empire.com');
-INSERT INTO Users (ID, Name, Email) VALUES (6, 'Frodo Baggins', 'frodo.baggins@shire.com');
-INSERT INTO Users (ID, Name, Email) VALUES (7, 'Gandalf the Grey', 'gandalf@wizard.com');
-INSERT INTO Users (ID, Name, Email) VALUES (8, 'Tony Stark', 'tony.stark@starkindustries.com');
-INSERT INTO Users (ID, Name, Email) VALUES (9, 'Bruce Wayne', 'bruce.wayne@wayneenterprises.com');
-INSERT INTO Users (ID, Name, Email) VALUES (10, 'Clark Kent', 'clark.kent@dailyplanet.com');
+INSERT INTO Users (ID, Name, Email, Birthday) VALUES (1, 'Harry Potter', 'harry.potter@hogwarts.com', '1980-07-31');
+INSERT INTO Users (ID, Name, Email, Birthday) VALUES (2, 'Hermione Granger', 'hermione.granger@hogwarts.com', '1979-09-19');
+INSERT INTO Users (ID, Name, Email, Birthday) VALUES (3, 'Ron Weasley', 'ron.weasley@hogwarts.com', '1980-03-01');
+INSERT INTO Users (ID, Name, Email, Birthday) VALUES (4, 'Luke Skywalker', 'luke.skywalker@rebellion.com', '1951-09-25');
+INSERT INTO Users (ID, Name, Email, Birthday) VALUES (5, 'Darth Vader', 'darth.vader@empire.com', '2011-09-12');
+INSERT INTO Users (ID, Name, Email, Birthday) VALUES (6, 'Frodo Baggins', 'frodo.baggins@shire.com', '1951-09-25');
+INSERT INTO Users (ID, Name, Email, Birthday) VALUES (7, 'Gandalf the Grey', 'gandalf@wizard.com', '1951-09-25');
+INSERT INTO Users (ID, Name, Email, Birthday) VALUES (8, 'Tony Stark', 'tony.stark@starkindustries.com', '1970-05-29');
+INSERT INTO Users (ID, Name, Email, Birthday) VALUES (9, 'Bruce Wayne', 'bruce.wayne@wayneenterprises.com', '1972-02-19');
+INSERT INTO Users (ID, Name, Email, Birthday) VALUES (10, 'Clark Kent', 'clark.kent@dailyplanet.com', '1979-06-18');
 GO
+
 
 EXEC sys.sp_cdc_enable_db;
 GO

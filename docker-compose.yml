@@ -35,6 +35,18 @@ services:
             kafka:
               properties:
                 bootstrap.servers: "franz:9092"
+  
+  # schema-registry:
+  #   image: confluentinc/cp-schema-registry:latest
+  #   container_name: schema-registry
+  #   depends_on:
+  #     - kafka
+  #   environment:
+  #     SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'PLAINTEXT://kafka:9092'
+  #     SCHEMA_REGISTRY_HOST_NAME: 'schema-registry'
+  #     SCHEMA_REGISTRY_LISTENERS: 'http://0.0.0.0:8081'
+  #   networks:
+  #     - kafka-net
 
   kafka-connect:
     
@@ -56,6 +68,10 @@ services:
       - CONNECT_STATUS_STORAGE_REPLICATION_FACTOR=1
       - CONNECT_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       - CONNECT_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
+      #- CONNECT_KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
+      #- CONNECT_VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
+      #- CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      #- CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
       - CONNECT_INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       - CONNECT_INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
       - CONNECT_REST_ADVERTISED_HOST_NAME=kafka-connect
@@ -83,7 +99,7 @@ services:
         sleep infinity
     depends_on:
       - kafka
-
+      # - schema-registry
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -99,13 +115,9 @@ services:
     command: /bin/bash -c "(/opt/mssql/bin/sqlservr & sleep 30s & /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'iLoveBillGate$' -d master -i /init.sql & wait)"
     networks:
       - kafka-net
-  adminer:
-    image: adminer
-    container_name: adminer
-    ports:
-      - 8081:8080
-    networks:
-      - kafka-net  
+
+
+
 
 
   postgres:

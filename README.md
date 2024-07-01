@@ -28,7 +28,6 @@ Error:
 
 ### TODO:
 - **Database History/Snapshot**: Transfer history and handle large data volumes
-- **Data Types Mapping**: Ensure accurate mapping of data types, (probably) resolved by:
 - Use [Avro](https://debezium.io/documentation/reference/stable/configuration/avro.html) instead of JSON
 
 
@@ -103,3 +102,20 @@ Get all available Plugins
 Register Connector
 ```
 curl -X POST -H "Content-Type: application/json" --data @kafka-connect/mysql-connector.json http://localhost:8083/connectors
+```
+
+## Fragen
+- Datumswerte:   
+"Normaler" JDBC Sink connector versteht nicht, dass Date verwendet werden soll --> verwendet int32 (ignoriert "name")
+```json
+          {
+            "type": "int32",
+            "optional": true,
+            "name": "io.debezium.time.Date",
+            "version": 1,
+            "field": "Birthday"
+          }
+```
+- Text und INT als Datentypen für Sink, außer man verwenden Debezium Sink (Läuft mit verwendetem Image für Connect aber nicht ...)
+- String immer auf TEXT --> Ja im default schon --> Problem?
+- Kann der Name der Tabelle dynamisch mit Regex oder so bestimmt werden?
